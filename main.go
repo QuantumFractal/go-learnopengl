@@ -13,6 +13,8 @@ import (
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+
+	"github.com/disintegration/imaging"
 )
 
 // FloatSize represents how large a float is.
@@ -90,7 +92,8 @@ func createTexture(textureFile string) (uint32, error) {
 	if rgba.Stride != rgba.Rect.Size().X*4 {
 		return 0, fmt.Errorf("unsupported stride")
 	}
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+	flipped := imaging.FlipV(img)
+	draw.Draw(rgba, rgba.Bounds(), flipped, image.Point{0, 0}, draw.Src)
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
@@ -145,9 +148,9 @@ func main() {
 
 	var vertices = []float32{
 		// positions          // colors           // texture coords
-		0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, // top right
+		0.5, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0, 1.0, // top right
 		0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, // bottom right
-		-0.5, -0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom left
+		-0.5, -0.5, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, // bottom left
 		-0.5, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, // top left
 	}
 
@@ -185,7 +188,7 @@ func main() {
 
 	// color attribute
 	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(3*4))
-	gl.EnableVertexAttribArray(0)
+	gl.EnableVertexAttribArray(1)
 
 	// texture attribute
 	gl.VertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, gl.PtrOffset(6*4))
@@ -196,6 +199,11 @@ func main() {
 
 	// Load Texture
 	texture, err := createTexture("tarp.png")
+	if err != nil {
+		panic(err)
+	}
+
+	ball, err := createTexture("ball.png")
 	if err != nil {
 		panic(err)
 	}
@@ -219,6 +227,10 @@ func main() {
 	}
 	defer gl.DeleteProgram(shaderProgram)
 
+	gl.UseProgram(shaderProgram)
+	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture1\x00")), 0)
+	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture2\x00")), 1)
+
 	for !window.ShouldClose() {
 		// Process input
 		processInput(window)
@@ -230,10 +242,11 @@ func main() {
 		// Draw triangles
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, ball)
 
 		trans := mgl32.Ident4()
 
-		gl.UseProgram(shaderProgram)
 		transformloc := gl.GetUniformLocation(vertexShader, gl.Str("transform\x00"))
 		gl.UniformMatrix4fv(transformloc, 1, false, &trans[0])
 
