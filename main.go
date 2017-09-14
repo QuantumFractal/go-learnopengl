@@ -13,8 +13,6 @@ import (
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
-
-	"github.com/disintegration/imaging"
 )
 
 // FloatSize represents how large a float is.
@@ -92,8 +90,7 @@ func createTexture(textureFile string) (uint32, error) {
 	if rgba.Stride != rgba.Rect.Size().X*4 {
 		return 0, fmt.Errorf("unsupported stride")
 	}
-	flipped := imaging.FlipV(img)
-	draw.Draw(rgba, rgba.Bounds(), flipped, image.Point{0, 0}, draw.Src)
+	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
@@ -147,11 +144,47 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	var vertices = []float32{
-		// positions         // texture coords
-		0.5, 0.5, 0.0, 1.0, 1.0, // top right
-		0.5, -0.5, 0.0, 1.0, 0.0, // bottom right
-		-0.5, -0.5, 0.0, 0.0, 0.0, // bottom left
-		-0.5, 0.5, 0.0, 0.0, 1.0, // top left
+		-0.5, -0.5, -0.5, 0.0, 0.0,
+		0.5, -0.5, -0.5, 1.0, 0.0,
+		0.5, 0.5, -0.5, 1.0, 1.0,
+		0.5, 0.5, -0.5, 1.0, 1.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0,
+		-0.5, -0.5, -0.5, 0.0, 0.0,
+
+		-0.5, -0.5, 0.5, 0.0, 0.0,
+		0.5, -0.5, 0.5, 1.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 1.0,
+		0.5, 0.5, 0.5, 1.0, 1.0,
+		-0.5, 0.5, 0.5, 0.0, 1.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0,
+
+		-0.5, 0.5, 0.5, 1.0, 0.0,
+		-0.5, 0.5, -0.5, 1.0, 1.0,
+		-0.5, -0.5, -0.5, 0.0, 1.0,
+		-0.5, -0.5, -0.5, 0.0, 1.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0,
+		-0.5, 0.5, 0.5, 1.0, 0.0,
+
+		0.5, 0.5, 0.5, 1.0, 0.0,
+		0.5, 0.5, -0.5, 1.0, 1.0,
+		0.5, -0.5, -0.5, 0.0, 1.0,
+		0.5, -0.5, -0.5, 0.0, 1.0,
+		0.5, -0.5, 0.5, 0.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 0.0,
+
+		-0.5, -0.5, -0.5, 0.0, 1.0,
+		0.5, -0.5, -0.5, 1.0, 1.0,
+		0.5, -0.5, 0.5, 1.0, 0.0,
+		0.5, -0.5, 0.5, 1.0, 0.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0,
+		-0.5, -0.5, -0.5, 0.0, 1.0,
+
+		-0.5, 0.5, -0.5, 0.0, 1.0,
+		0.5, 0.5, -0.5, 1.0, 1.0,
+		0.5, 0.5, 0.5, 1.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0,
 	}
 
 	var indices = []int32{
@@ -223,23 +256,42 @@ func main() {
 	}
 	defer gl.DeleteProgram(shaderProgram)
 
+	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.MULTISAMPLE)
+
 	gl.UseProgram(shaderProgram)
 	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture1\x00")), 0)
 	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture2\x00")), 1)
+
+	var (
+		model      mgl32.Mat4
+		view       mgl32.Mat4
+		projection mgl32.Mat4
+	)
+
+	model = mgl32.HomogRotate3D(mgl32.DegToRad(-55.0), mgl32.Vec3{1.0, 0.0, 0.0})
+	view = mgl32.Translate3D(0.0, 0.0, -3.0)
+	projection = mgl32.Perspective(45.0, 800/600, 1.0, 100.0)
 
 	for !window.ShouldClose() {
 		// Process input
 		processInput(window)
 
 		// Render stuff
-		gl.Clear(gl.COLOR_BUFFER_BIT)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 
-		trans := mgl32.HomogRotate3D(float32(glfw.GetTime()), mgl32.Vec3{0.0, 0.0, 1.0})
+		model = mgl32.HomogRotate3D(float32(glfw.GetTime()), mgl32.Vec3{1, 1, 0.0}.Normalize())
 
 		gl.UseProgram(shaderProgram)
-		transformloc := gl.GetUniformLocation(shaderProgram, gl.Str("trans\x00"))
-		gl.UniformMatrix4fv(transformloc, 1, false, &trans[0])
+		modelUniform := gl.GetUniformLocation(shaderProgram, gl.Str("model\x00"))
+		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+		viewUniform := gl.GetUniformLocation(shaderProgram, gl.Str("view\x00"))
+		gl.UniformMatrix4fv(viewUniform, 1, false, &view[0])
+
+		projectionUniform := gl.GetUniformLocation(shaderProgram, gl.Str("projection\x00"))
+		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
 		gl.BindVertexArray(VAO)
 
@@ -249,7 +301,8 @@ func main() {
 		gl.ActiveTexture(gl.TEXTURE1)
 		gl.BindTexture(gl.TEXTURE_2D, ball)
 
-		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
+		gl.DrawArrays(gl.TRIANGLES, 0, 36)
+		//gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 		// Swap buffers
 		window.SwapBuffers()
