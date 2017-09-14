@@ -147,11 +147,11 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	var vertices = []float32{
-		// positions          // colors           // texture coords
-		0.5, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0, 1.0, // top right
-		0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, // bottom right
-		-0.5, -0.5, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, // bottom left
-		-0.5, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, // top left
+		// positions         // texture coords
+		0.5, 0.5, 0.0, 1.0, 1.0, // top right
+		0.5, -0.5, 0.0, 1.0, 0.0, // bottom right
+		-0.5, -0.5, 0.0, 0.0, 0.0, // bottom left
+		-0.5, 0.5, 0.0, 0.0, 1.0, // top left
 	}
 
 	var indices = []int32{
@@ -183,16 +183,12 @@ func main() {
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(indices), gl.STATIC_DRAW)
 
 	// position attribute
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
 	gl.EnableVertexAttribArray(0)
 
-	// color attribute
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(3*4))
-	gl.EnableVertexAttribArray(1)
-
 	// texture attribute
-	gl.VertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, gl.PtrOffset(6*4))
-	gl.EnableVertexAttribArray(2)
+	gl.VertexAttribPointer(1, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
+	gl.EnableVertexAttribArray(1)
 
 	defer gl.DeleteVertexArrays(1, &VAO)
 	defer gl.DeleteBuffers(1, &VBO)
@@ -239,18 +235,20 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 
+		trans := mgl32.HomogRotate3D(float32(glfw.GetTime()), mgl32.Vec3{0.0, 0.0, 1.0})
+
+		gl.UseProgram(shaderProgram)
+		transformloc := gl.GetUniformLocation(shaderProgram, gl.Str("trans\x00"))
+		gl.UniformMatrix4fv(transformloc, 1, false, &trans[0])
+
+		gl.BindVertexArray(VAO)
+
 		// Draw triangles
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 		gl.ActiveTexture(gl.TEXTURE1)
 		gl.BindTexture(gl.TEXTURE_2D, ball)
 
-		trans := mgl32.Ident4()
-
-		transformloc := gl.GetUniformLocation(vertexShader, gl.Str("transform\x00"))
-		gl.UniformMatrix4fv(transformloc, 1, false, &trans[0])
-
-		gl.BindVertexArray(VAO)
 		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 		// Swap buffers
