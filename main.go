@@ -192,6 +192,19 @@ func main() {
 		1, 2, 3, // second triangle
 	}
 
+	var cubePositions = []mgl32.Vec3{
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{2.0, 5.0, -15.0},
+		mgl32.Vec3{-1.5, -2.2, -2.5},
+		mgl32.Vec3{-3.8, -2.0, -12.3},
+		mgl32.Vec3{2.4, -0.4, -3.5},
+		mgl32.Vec3{-1.7, 3.0, -7.5},
+		mgl32.Vec3{1.3, -2.0, -2.5},
+		mgl32.Vec3{1.5, 2.0, -2.5},
+		mgl32.Vec3{1.5, 0.2, -1.5},
+		mgl32.Vec3{-1.3, 1.0, -1.5},
+	}
+
 	// VBO, EBO, VAO creation
 	var (
 		VBO uint32
@@ -199,7 +212,7 @@ func main() {
 		VAO uint32
 	)
 
-	// Generate the buffers
+	// Generate the bufers
 	gl.GenBuffers(1, &VBO)
 	gl.GenBuffers(1, &EBO)
 	gl.GenVertexArrays(1, &VAO)
@@ -264,28 +277,46 @@ func main() {
 	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture2\x00")), 1)
 
 	var (
-		model      mgl32.Mat4
 		view       mgl32.Mat4
 		projection mgl32.Mat4
+		//cameraPos    mgl32.Vec3
+		//cameraTarget mgl32.Vec3
+		//up           mgl32.Vec3
 	)
 
-	model = mgl32.HomogRotate3D(mgl32.DegToRad(-55.0), mgl32.Vec3{1.0, 0.0, 0.0})
 	view = mgl32.Translate3D(0.0, 0.0, -3.0)
-	projection = mgl32.Perspective(45.0, 800/600, 1.0, 100.0)
+	projection = mgl32.Perspective(45.0, float32(800)/float32(600), 1.0, 100.0)
 
+	//cameraPos = mgl32.Vec3{0.0, 0.0, 3.0}
+	//cameraTarget = mgl32.Vec3{0.0, 0.0, 0.0}
+	//up = mgl32.Vec3{0.0, 0.0, 1.0}
+
+	//view = mgl32.LookAtV(cameraPos, cameraTarget, up)
+
+	var (
+		model mgl32.Mat4
+	//radius float32
+	//camX   float32
+	//camZ   float32
+	)
 	for !window.ShouldClose() {
 		// Process input
 		processInput(window)
 
 		// Render stuff
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		model = mgl32.HomogRotate3D(float32(glfw.GetTime()), mgl32.Vec3{1, 1, 0.0}.Normalize())
+		//radius = 10
+		//camX = float32(math.Sin(float64(glfw.GetTime()))) * radius
+		//camZ = float32(math.Cos(float64(glfw.GetTime()))) * radius
+
+		//view = mgl32.LookAtV(mgl32.Vec3{camX, 0.0, camZ}, cameraTarget, up)
 
 		gl.UseProgram(shaderProgram)
-		modelUniform := gl.GetUniformLocation(shaderProgram, gl.Str("model\x00"))
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+
+		projection = mgl32.Perspective(mgl32.DegToRad(45.0), float32(800)/float32(600), 1.0, 100.0)
+		view = mgl32.Translate3D(0.0, 0.0, -3.0)
 
 		viewUniform := gl.GetUniformLocation(shaderProgram, gl.Str("view\x00"))
 		gl.UniformMatrix4fv(viewUniform, 1, false, &view[0])
@@ -294,6 +325,14 @@ func main() {
 		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
 		gl.BindVertexArray(VAO)
+		for i := 0; i < 10; i++ {
+			model = mgl32.Translate3D(cubePositions[i].X(), cubePositions[i].Y(), cubePositions[i].Z())
+			angle := 20.0 * float32(i)
+			model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(angle), mgl32.Vec3{1.0, 0.3, 0.5}))
+			modelUniform := gl.GetUniformLocation(shaderProgram, gl.Str("model\x00"))
+			gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+			gl.DrawArrays(gl.TRIANGLES, 0, 36)
+		}
 
 		// Draw triangles
 		gl.ActiveTexture(gl.TEXTURE0)
@@ -301,7 +340,6 @@ func main() {
 		gl.ActiveTexture(gl.TEXTURE1)
 		gl.BindTexture(gl.TEXTURE_2D, ball)
 
-		gl.DrawArrays(gl.TRIANGLES, 0, 36)
 		//gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 		// Swap buffers
