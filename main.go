@@ -18,13 +18,34 @@ import (
 // FloatSize represents how large a float is.
 const FloatSize = 4
 
+var (
+	cameraPos   mgl32.Vec3
+	cameraFront mgl32.Vec3
+	cameraUp    mgl32.Vec3
+	deltaTime   float32
+	lastFrame   float32
+)
+
 func init() {
 	runtime.LockOSThread()
 }
 
 func processInput(window *glfw.Window) {
+	cameraSpeed := 2.5 * deltaTime
 	if window.GetKey(glfw.KeyEscape) == glfw.Press {
 		window.SetShouldClose(true)
+	}
+	if window.GetKey(glfw.KeyW) == glfw.Press {
+		cameraPos = cameraPos.Add(cameraFront.Mul(cameraSpeed))
+	}
+	if window.GetKey(glfw.KeyS) == glfw.Press {
+		cameraPos = cameraPos.Sub(cameraFront.Mul(cameraSpeed))
+	}
+	if window.GetKey(glfw.KeyA) == glfw.Press {
+		cameraPos = cameraPos.Sub(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
+	}
+	if window.GetKey(glfw.KeyD) == glfw.Press {
+		cameraPos = cameraPos.Add(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
 	}
 }
 
@@ -134,6 +155,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	window.SetPos(1980, 60)
 	window.MakeContextCurrent()
 
 	if err := gl.Init(); err != nil {
@@ -279,44 +301,38 @@ func main() {
 	var (
 		view       mgl32.Mat4
 		projection mgl32.Mat4
-		//cameraPos    mgl32.Vec3
-		//cameraTarget mgl32.Vec3
-		//up           mgl32.Vec3
 	)
 
 	view = mgl32.Translate3D(0.0, 0.0, -3.0)
 	projection = mgl32.Perspective(45.0, float32(800)/float32(600), 1.0, 100.0)
 
-	//cameraPos = mgl32.Vec3{0.0, 0.0, 3.0}
-	//cameraTarget = mgl32.Vec3{0.0, 0.0, 0.0}
-	//up = mgl32.Vec3{0.0, 0.0, 1.0}
+	cameraPos = mgl32.Vec3{0.0, 0.0, 3.0}
+	cameraFront = mgl32.Vec3{0.0, 0.0, -1.0}
+	cameraUp = mgl32.Vec3{0.0, 1.0, 0.0}
 
 	//view = mgl32.LookAtV(cameraPos, cameraTarget, up)
 
 	var (
 		model mgl32.Mat4
-	//radius float32
-	//camX   float32
-	//camZ   float32
 	)
+
 	for !window.ShouldClose() {
 		// Process input
 		processInput(window)
+		currentFrame := float32(glfw.GetTime())
+		deltaTime = currentFrame - lastFrame
+		lastFrame = currentFrame
 
 		// Render stuff
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		//radius = 10
-		//camX = float32(math.Sin(float64(glfw.GetTime()))) * radius
-		//camZ = float32(math.Cos(float64(glfw.GetTime()))) * radius
-
-		//view = mgl32.LookAtV(mgl32.Vec3{camX, 0.0, camZ}, cameraTarget, up)
+		view = mgl32.LookAtV(cameraPos, cameraPos.Add(cameraFront), cameraUp)
 
 		gl.UseProgram(shaderProgram)
 
 		projection = mgl32.Perspective(mgl32.DegToRad(45.0), float32(800)/float32(600), 1.0, 100.0)
-		view = mgl32.Translate3D(0.0, 0.0, -3.0)
+		//view = mgl32.Translate3D(0.0, 0.0, -3.0)
 
 		viewUniform := gl.GetUniformLocation(shaderProgram, gl.Str("view\x00"))
 		gl.UniformMatrix4fv(viewUniform, 1, false, &view[0])
