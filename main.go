@@ -5,10 +5,8 @@ import (
 	"image"
 	"image/draw"
 	_ "image/png"
-	"io/ioutil"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
@@ -48,6 +46,12 @@ func processInput(window *glfw.Window) {
 	if window.GetKey(glfw.KeyD) == glfw.Press {
 		camera.ProcessKeyboard(RIGHT, deltaTime)
 	}
+	if window.GetKey(glfw.KeyE) == glfw.Press {
+		camera.ProcessKeyboard(UP, deltaTime)
+	}
+	if window.GetKey(glfw.KeyQ) == glfw.Press {
+		camera.ProcessKeyboard(DOWN, deltaTime)
+	}
 }
 
 func mouseCallback(window *glfw.Window, xpos float64, ypos float64) {
@@ -67,54 +71,6 @@ func mouseCallback(window *glfw.Window, xpos float64, ypos float64) {
 
 func scrollCallback(window *glfw.Window, xoffset float64, yoffset float64) {
 	camera.ProcessMouseScroll(float32(yoffset))
-}
-
-func compileShader(shaderFile string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
-
-	data, err := ioutil.ReadFile(shaderFile)
-	if err != nil {
-		panic(err)
-	}
-
-	csources, free := gl.Strs(string(data) + "\x00")
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
-
-	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to compile shader\n %v \n because:\n %v", string(data), log)
-	}
-
-	return shader, nil
-}
-
-func createProgram(vertexShader uint32, fragmentShader uint32) (uint32, error) {
-	shaderProgram := gl.CreateProgram()
-	gl.AttachShader(shaderProgram, vertexShader)
-	gl.AttachShader(shaderProgram, fragmentShader)
-	gl.LinkProgram(shaderProgram)
-
-	var success int32
-	gl.GetProgramiv(shaderProgram, gl.LINK_STATUS, &success)
-	if success == gl.FALSE {
-		var logLength int32
-		gl.GetProgramiv(shaderProgram, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(shaderProgram, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to link program: %v", log)
-	}
-	return shaderProgram, nil
 }
 
 func createTexture(textureFile string) (uint32, error) {
@@ -188,148 +144,106 @@ func main() {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("OpenGL version", version)
 
-	var vertices = []float32{
-		-0.5, -0.5, -0.5, 0.0, 0.0,
-		0.5, -0.5, -0.5, 1.0, 0.0,
-		0.5, 0.5, -0.5, 1.0, 1.0,
-		0.5, 0.5, -0.5, 1.0, 1.0,
-		-0.5, 0.5, -0.5, 0.0, 1.0,
-		-0.5, -0.5, -0.5, 0.0, 0.0,
+	vertices := []float32{
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		-0.5, 0.5, -0.5,
+		-0.5, -0.5, -0.5,
 
-		-0.5, -0.5, 0.5, 0.0, 0.0,
-		0.5, -0.5, 0.5, 1.0, 0.0,
-		0.5, 0.5, 0.5, 1.0, 1.0,
-		0.5, 0.5, 0.5, 1.0, 1.0,
-		-0.5, 0.5, 0.5, 0.0, 1.0,
-		-0.5, -0.5, 0.5, 0.0, 0.0,
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5,
+		-0.5, -0.5, 0.5,
 
-		-0.5, 0.5, 0.5, 1.0, 0.0,
-		-0.5, 0.5, -0.5, 1.0, 1.0,
-		-0.5, -0.5, -0.5, 0.0, 1.0,
-		-0.5, -0.5, -0.5, 0.0, 1.0,
-		-0.5, -0.5, 0.5, 0.0, 0.0,
-		-0.5, 0.5, 0.5, 1.0, 0.0,
+		-0.5, 0.5, 0.5,
+		-0.5, 0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, -0.5, 0.5,
+		-0.5, 0.5, 0.5,
 
-		0.5, 0.5, 0.5, 1.0, 0.0,
-		0.5, 0.5, -0.5, 1.0, 1.0,
-		0.5, -0.5, -0.5, 0.0, 1.0,
-		0.5, -0.5, -0.5, 0.0, 1.0,
-		0.5, -0.5, 0.5, 0.0, 0.0,
-		0.5, 0.5, 0.5, 1.0, 0.0,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		0.5, 0.5, 0.5,
 
-		-0.5, -0.5, -0.5, 0.0, 1.0,
-		0.5, -0.5, -0.5, 1.0, 1.0,
-		0.5, -0.5, 0.5, 1.0, 0.0,
-		0.5, -0.5, 0.5, 1.0, 0.0,
-		-0.5, -0.5, 0.5, 0.0, 0.0,
-		-0.5, -0.5, -0.5, 0.0, 1.0,
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+		-0.5, -0.5, 0.5,
+		-0.5, -0.5, -0.5,
 
-		-0.5, 0.5, -0.5, 0.0, 1.0,
-		0.5, 0.5, -0.5, 1.0, 1.0,
-		0.5, 0.5, 0.5, 1.0, 0.0,
-		0.5, 0.5, 0.5, 1.0, 0.0,
-		-0.5, 0.5, 0.5, 0.0, 0.0,
-		-0.5, 0.5, -0.5, 0.0, 1.0,
-	}
-
-	var indices = []int32{
-		0, 1, 3, // first triangle
-		1, 2, 3, // second triangle
-	}
-
-	var cubePositions = []mgl32.Vec3{
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{2.0, 5.0, -15.0},
-		mgl32.Vec3{-1.5, -2.2, -2.5},
-		mgl32.Vec3{-3.8, -2.0, -12.3},
-		mgl32.Vec3{2.4, -0.4, -3.5},
-		mgl32.Vec3{-1.7, 3.0, -7.5},
-		mgl32.Vec3{1.3, -2.0, -2.5},
-		mgl32.Vec3{1.5, 2.0, -2.5},
-		mgl32.Vec3{1.5, 0.2, -1.5},
-		mgl32.Vec3{-1.3, 1.0, -1.5},
+		-0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5,
+		-0.5, 0.5, -0.5,
 	}
 
 	// VBO, EBO, VAO creation
 	var (
-		VBO uint32
-		EBO uint32
-		VAO uint32
+		VBO      uint32
+		VAO      uint32
+		lightVAO uint32
 	)
 
 	// Generate the bufers
 	gl.GenBuffers(1, &VBO)
-	gl.GenBuffers(1, &EBO)
 	gl.GenVertexArrays(1, &VAO)
+
+	// Copy vertices array into vertex buffer object
+	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
+	gl.BufferData(gl.ARRAY_BUFFER, 3*len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
 
 	// Bind Vertex Array Object
 	gl.BindVertexArray(VAO)
 
-	// Copy vertices array into vertex buffer object
-	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
-
-	// Copy index array into element buffer object
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(indices), gl.STATIC_DRAW)
-
 	// position attribute
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
 	gl.EnableVertexAttribArray(0)
-
-	// texture attribute
-	gl.VertexAttribPointer(1, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
-	gl.EnableVertexAttribArray(1)
 
 	defer gl.DeleteVertexArrays(1, &VAO)
 	defer gl.DeleteBuffers(1, &VBO)
 
-	// Load Texture
-	texture, err := createTexture("tarp.png")
+	gl.GenVertexArrays(1, &lightVAO)
+	gl.BindVertexArray(lightVAO)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
+
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+	gl.EnableVertexAttribArray(0)
+
+	lightingShader, err := CreateShader("vertex.glsl", "fragment.glsl")
 	if err != nil {
 		panic(err)
 	}
 
-	ball, err := createTexture("ball.png")
+	lampShader, err := CreateShader("vertex.glsl", "lightfragment.glsl")
 	if err != nil {
 		panic(err)
 	}
-
-	// Load Shaders
-	vertexShader, err := compileShader("vertex.glsl", gl.VERTEX_SHADER)
-	if err != nil {
-		panic(err)
-	}
-	defer gl.DeleteShader(vertexShader)
-
-	fragmentShader, err := compileShader("fragment.glsl", gl.FRAGMENT_SHADER)
-	if err != nil {
-		panic(err)
-	}
-	defer gl.DeleteShader(fragmentShader)
-
-	shaderProgram, err := createProgram(vertexShader, fragmentShader)
-	if err != nil {
-		panic(err)
-	}
-	defer gl.DeleteProgram(shaderProgram)
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.Enable(gl.MULTISAMPLE)
 
-	gl.UseProgram(shaderProgram)
-	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture1\x00")), 0)
-	gl.Uniform1i(gl.GetUniformLocation(shaderProgram, gl.Str("texture2\x00")), 1)
-
 	var (
 		view       mgl32.Mat4
 		projection mgl32.Mat4
+		model      mgl32.Mat4
 	)
 
-	var (
-		model mgl32.Mat4
-	)
+	model = mgl32.Ident4()
+	lightPos := mgl32.Vec3{1.2, 1.0, 2.0}
 
+	// MAIN LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP
 	for !window.ShouldClose() {
 		currentFrame := float32(glfw.GetTime())
 		deltaTime = currentFrame - lastFrame
@@ -339,39 +253,32 @@ func main() {
 		processInput(window)
 
 		// Render stuff
-		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
+		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		view = camera.GetViewMatrix()
-
-		gl.UseProgram(shaderProgram)
+		lightingShader.Use()
+		lightingShader.setVec3("objectColor", mgl32.Vec3{1.0, 0.5, 0.31})
+		lightingShader.setVec3("lightColor", mgl32.Vec3{1.0, 1.0, 1.0})
 
 		projection = mgl32.Perspective(mgl32.DegToRad(camera.Zoom), float32(800)/float32(600), 1.0, 100.0)
-		//view = mgl32.Translate3D(0.0, 0.0, -3.0)
+		view = camera.GetViewMatrix()
 
-		viewUniform := gl.GetUniformLocation(shaderProgram, gl.Str("view\x00"))
-		gl.UniformMatrix4fv(viewUniform, 1, false, &view[0])
-
-		projectionUniform := gl.GetUniformLocation(shaderProgram, gl.Str("projection\x00"))
-		gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
+		lightingShader.setMat4("projection", projection)
+		lightingShader.setMat4("view", view)
+		lightingShader.setMat4("model", model)
 
 		gl.BindVertexArray(VAO)
-		for i := 0; i < 10; i++ {
-			model = mgl32.Translate3D(cubePositions[i].X(), cubePositions[i].Y(), cubePositions[i].Z())
-			angle := 20.0 * float32(i)
-			model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(angle), mgl32.Vec3{1.0, 0.3, 0.5}))
-			modelUniform := gl.GetUniformLocation(shaderProgram, gl.Str("model\x00"))
-			gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-			gl.DrawArrays(gl.TRIANGLES, 0, 36)
-		}
+		gl.DrawArrays(gl.TRIANGLES, 0, 36)
 
-		// Draw triangles
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
-		gl.ActiveTexture(gl.TEXTURE1)
-		gl.BindTexture(gl.TEXTURE_2D, ball)
+		lampShader.Use()
+		lampShader.setMat4("projection", projection)
+		lampShader.setMat4("view", view)
+		model := mgl32.Translate3D(lightPos.X(), lightPos.Y(), lightPos.Z())
+		model = model.Mul4(mgl32.Scale3D(0.2, 0.2, 0.2))
+		lampShader.setMat4("model", model)
 
-		//gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0))
+		gl.BindVertexArray(lightVAO)
+		gl.DrawArrays(gl.TRIANGLES, 0, 36)
 
 		// Swap buffers
 		window.SwapBuffers()

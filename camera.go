@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -19,17 +18,12 @@ const SPEED = 2.5
 const SENSITIVTY = 0.1
 const ZOOM = 45.0
 
-// FORWARD thing.
 const FORWARD = 0
-
-// BACKWARD thing.
 const BACKWARD = 1
-
-// LEFT thing.
 const LEFT = 2
-
-// RIGHT thing.
 const RIGHT = 3
+const UP = 4
+const DOWN = 5
 
 // Camera structure.
 type Camera struct {
@@ -68,6 +62,12 @@ func (c *Camera) GetViewMatrix() mgl32.Mat4 {
 // ProcessKeyboard thing.
 func (c *Camera) ProcessKeyboard(direction int, deltaTime float32) {
 	velocity := c.MovementSpeed * deltaTime
+	if direction == UP {
+		c.Position = c.Position.Add(c.WorldUp.Mul(velocity))
+	}
+	if direction == DOWN {
+		c.Position = c.Position.Sub(c.WorldUp.Mul(velocity))
+	}
 	if direction == FORWARD {
 		c.Position = c.Position.Add(c.Front.Mul(velocity))
 	}
@@ -104,7 +104,6 @@ func (c *Camera) ProcessMouseMovement(xoffset float32, yoffset float32, constrai
 
 // ProcessMouseScroll thing.
 func (c *Camera) ProcessMouseScroll(yoffset float32) {
-
 	if c.Zoom >= 1.0 && c.Zoom <= 45.0 {
 		c.Zoom -= yoffset
 	}
@@ -114,7 +113,6 @@ func (c *Camera) ProcessMouseScroll(yoffset float32) {
 	if c.Zoom >= 45.0 {
 		c.Zoom = 45.0
 	}
-	fmt.Println("Scroll value: %s, Zoom: %s", yoffset, c.Zoom)
 }
 
 func (c *Camera) updateCameraVectors() {
