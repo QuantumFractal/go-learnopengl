@@ -19,34 +19,54 @@ import (
 const FloatSize = 4
 
 var (
-	cameraPos   mgl32.Vec3
-	cameraFront mgl32.Vec3
-	cameraUp    mgl32.Vec3
-	deltaTime   float32
-	lastFrame   float32
+	deltaTime float32
+	lastFrame float32
 )
+
+var lastX = float32(800 / 2)
+var lastY = float32(600 / 2)
+var firstMouse = true
+var camera = CreateCamera(mgl32.Vec3{0.0, 0.0, 3.0}, mgl32.Vec3{0.0, 1.0, 0.0}, YAW, PITCH)
 
 func init() {
 	runtime.LockOSThread()
 }
 
 func processInput(window *glfw.Window) {
-	cameraSpeed := 2.5 * deltaTime
 	if window.GetKey(glfw.KeyEscape) == glfw.Press {
 		window.SetShouldClose(true)
 	}
 	if window.GetKey(glfw.KeyW) == glfw.Press {
-		cameraPos = cameraPos.Add(cameraFront.Mul(cameraSpeed))
+		camera.ProcessKeyboard(FORWARD, deltaTime)
 	}
 	if window.GetKey(glfw.KeyS) == glfw.Press {
-		cameraPos = cameraPos.Sub(cameraFront.Mul(cameraSpeed))
+		camera.ProcessKeyboard(BACKWARD, deltaTime)
 	}
 	if window.GetKey(glfw.KeyA) == glfw.Press {
-		cameraPos = cameraPos.Sub(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
+		camera.ProcessKeyboard(LEFT, deltaTime)
 	}
 	if window.GetKey(glfw.KeyD) == glfw.Press {
-		cameraPos = cameraPos.Add(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
+		camera.ProcessKeyboard(RIGHT, deltaTime)
 	}
+}
+
+func mouseCallback(window *glfw.Window, xpos float64, ypos float64) {
+	if firstMouse {
+		lastX = float32(xpos)
+		lastY = float32(ypos)
+		firstMouse = false
+	}
+
+	xoffset := float32(xpos) - lastX
+	yoffset := float32(ypos) - lastY
+
+	lastX = float32(xpos)
+	lastY = float32(ypos)
+	camera.ProcessMouseMovement(xoffset, -yoffset, true)
+}
+
+func scrollCallback(window *glfw.Window, xoffset float64, yoffset float64) {
+	camera.ProcessMouseScroll(float32(yoffset))
 }
 
 func compileShader(shaderFile string, shaderType uint32) (uint32, error) {
@@ -157,6 +177,9 @@ func main() {
 	}
 	window.SetPos(1980, 60)
 	window.MakeContextCurrent()
+	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	window.SetCursorPosCallback(mouseCallback)
+	window.SetScrollCallback(scrollCallback)
 
 	if err := gl.Init(); err != nil {
 		panic(err)
@@ -303,35 +326,27 @@ func main() {
 		projection mgl32.Mat4
 	)
 
-	view = mgl32.Translate3D(0.0, 0.0, -3.0)
-	projection = mgl32.Perspective(45.0, float32(800)/float32(600), 1.0, 100.0)
-
-	cameraPos = mgl32.Vec3{0.0, 0.0, 3.0}
-	cameraFront = mgl32.Vec3{0.0, 0.0, -1.0}
-	cameraUp = mgl32.Vec3{0.0, 1.0, 0.0}
-
-	//view = mgl32.LookAtV(cameraPos, cameraTarget, up)
-
 	var (
 		model mgl32.Mat4
 	)
 
 	for !window.ShouldClose() {
-		// Process input
-		processInput(window)
 		currentFrame := float32(glfw.GetTime())
 		deltaTime = currentFrame - lastFrame
 		lastFrame = currentFrame
+
+		// Process input
+		processInput(window)
 
 		// Render stuff
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		view = mgl32.LookAtV(cameraPos, cameraPos.Add(cameraFront), cameraUp)
+		view = camera.GetViewMatrix()
 
 		gl.UseProgram(shaderProgram)
 
-		projection = mgl32.Perspective(mgl32.DegToRad(45.0), float32(800)/float32(600), 1.0, 100.0)
+		projection = mgl32.Perspective(mgl32.DegToRad(camera.Zoom), float32(800)/float32(600), 1.0, 100.0)
 		//view = mgl32.Translate3D(0.0, 0.0, -3.0)
 
 		viewUniform := gl.GetUniformLocation(shaderProgram, gl.Str("view\x00"))
