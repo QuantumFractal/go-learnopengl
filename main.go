@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/disintegration/imaging"
+
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -87,7 +89,8 @@ func createTexture(textureFile string) (uint32, error) {
 	if rgba.Stride != rgba.Rect.Size().X*4 {
 		return 0, fmt.Errorf("unsupported stride")
 	}
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+	flipped := imaging.FlipV(img)
+	draw.Draw(rgba, rgba.Bounds(), flipped, image.Point{0, 0}, draw.Src)
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
@@ -149,47 +152,48 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	vertices := []float32{
-		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
-		0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
-		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-		-0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
-		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+		// positions          // normals           // texture coords
+		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 0.0, 0.0, -1.0, 1.0, 0.0,
+		0.5, 0.5, -0.5, 0.0, 0.0, -1.0, 1.0, 1.0,
+		0.5, 0.5, -0.5, 0.0, 0.0, -1.0, 1.0, 1.0,
+		-0.5, 0.5, -0.5, 0.0, 0.0, -1.0, 0.0, 1.0,
+		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0, 0.0, 0.0,
 
-		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
-		0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
-		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
-		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 0.0, 1.0, 1.0, 1.0,
+		0.5, 0.5, 0.5, 0.0, 0.0, 1.0, 1.0, 1.0,
+		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 1.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
 
-		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
-		-0.5, 0.5, -0.5, -1.0, 0.0, 0.0,
-		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
-		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
-		-0.5, -0.5, 0.5, -1.0, 0.0, 0.0,
-		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0, 1.0, 0.0,
+		-0.5, 0.5, -0.5, -1.0, 0.0, 0.0, 1.0, 1.0,
+		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0, 0.0, 1.0,
+		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0, 0.0, 1.0,
+		-0.5, -0.5, 0.5, -1.0, 0.0, 0.0, 0.0, 0.0,
+		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0, 1.0, 0.0,
 
-		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
-		0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
-		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
-		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
-		0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
-		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0,
+		0.5, 0.5, -0.5, 1.0, 0.0, 0.0, 1.0, 1.0,
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 0.0, 1.0,
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 0.0, 1.0,
+		0.5, -0.5, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0,
 
-		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
-		0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
-		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-		-0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
-		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0, 0.0, 1.0,
+		0.5, -0.5, -0.5, 0.0, -1.0, 0.0, 1.0, 1.0,
+		0.5, -0.5, 0.5, 0.0, -1.0, 0.0, 1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, -1.0, 0.0, 1.0, 0.0,
+		-0.5, -0.5, 0.5, 0.0, -1.0, 0.0, 0.0, 0.0,
+		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0, 0.0, 1.0,
 
-		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
-		0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
-		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-		-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
-		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
+		0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 1.0, 1.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
 	}
 
 	// VBO, EBO, VAO creation
@@ -211,12 +215,16 @@ func main() {
 	gl.BindVertexArray(VAO)
 
 	// position attribute
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(0))
 	gl.EnableVertexAttribArray(0)
 
 	// normal attribute
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(3*4))
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(3*4))
 	gl.EnableVertexAttribArray(1)
+
+	// texture attribute
+	gl.VertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, gl.PtrOffset(6*4))
+	gl.EnableVertexAttribArray(2)
 
 	defer gl.DeleteVertexArrays(1, &VAO)
 	defer gl.DeleteBuffers(1, &VBO)
@@ -226,7 +234,7 @@ func main() {
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(0))
 	gl.EnableVertexAttribArray(0)
 
 	lightingShader, err := CreateShader("vertex.glsl", "fragment.glsl")
@@ -250,6 +258,18 @@ func main() {
 
 	model = mgl32.Ident4()
 	lightPos := mgl32.Vec3{1.2, 1.0, 2.0}
+	lightingShader.setInt("material.diffuse", 0)
+	lightingShader.setInt("material.specular", 1)
+
+	boxTexture, err := createTexture("diffuse_crate.png")
+	if err != nil {
+		panic(err)
+	}
+
+	boxSpecular, err := createTexture("specular_crate.png")
+	if err != nil {
+		panic(err)
+	}
 
 	// MAIN LOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOP
 	for !window.ShouldClose() {
@@ -261,31 +281,33 @@ func main() {
 		processInput(window)
 
 		// Render stuff
-		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
+		gl.ClearColor(0.1, 0.1, 0.1, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		lightingShader.Use()
 		lightingShader.setVec3("light.position", lightPos)
 		lightingShader.setVec3("viewPos", camera.Position)
 
-		lightColor := mgl32.Vec3{2.0, 0.7, 1.3}
-		diffuseColor := lightColor.Mul(0.5)
-		ambientColor := diffuseColor.Mul(0.2)
-		fmt.Println("light: %s diffuse: %s ambient: %s", lightColor, diffuseColor, ambientColor)
+		diffuseColor := mgl32.Vec3{0.5, 0.5, 0.5}
+		ambientColor := mgl32.Vec3{0.2, 0.2, 0.2}
+
 		lightingShader.setVec3("light.ambient", ambientColor)
 		lightingShader.setVec3("light.diffuse", diffuseColor)
 		lightingShader.setVec3("light.specular", mgl32.Vec3{1.0, 1.0, 1.0})
 
-		lightingShader.setVec3("material.ambient", mgl32.Vec3{1.0, 0.5, 0.31})
-		lightingShader.setVec3("material.diffuse", mgl32.Vec3{1.0, 0.5, 0.31})
-		lightingShader.setVec3("material.specular", mgl32.Vec3{0.5, 0.5, 0.5})
-		lightingShader.setFloat("material.shininess", 32.0)
+		lightingShader.setFloat("material.shininess", 64.0)
 
 		projection = mgl32.Perspective(mgl32.DegToRad(camera.Zoom), float32(800)/float32(600), 1.0, 100.0)
 		view = camera.GetViewMatrix()
 		lightingShader.setMat4("projection", projection)
 		lightingShader.setMat4("view", view)
 		lightingShader.setMat4("model", model)
+
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, boxTexture)
+
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, boxSpecular)
 
 		gl.BindVertexArray(VAO)
 		gl.DrawArrays(gl.TRIANGLES, 0, 36)
