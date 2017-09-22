@@ -115,6 +115,10 @@ func createTexture(textureFile string) (uint32, error) {
 	return texture, nil
 }
 
+func getTime() float32 {
+	return float32(glfw.GetTime())
+}
+
 func main() {
 	if err := glfw.Init(); err != nil {
 		panic(err)
@@ -261,18 +265,26 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		lightingShader.Use()
-		lightingShader.setVec3("objectColor", mgl32.Vec3{1.0, 0.5, 0.31})
-		lightingShader.setVec3("lightColor", mgl32.Vec3{1.0, 1.0, 1.0})
-		lightingShader.setVec3("lightPos", lightPos)
+		lightingShader.setVec3("light.position", lightPos)
 		lightingShader.setVec3("viewPos", camera.Position)
+
+		lightColor := mgl32.Vec3{2.0, 0.7, 1.3}
+		diffuseColor := lightColor.Mul(0.5)
+		ambientColor := diffuseColor.Mul(0.2)
+		fmt.Println("light: %s diffuse: %s ambient: %s", lightColor, diffuseColor, ambientColor)
+		lightingShader.setVec3("light.ambient", ambientColor)
+		lightingShader.setVec3("light.diffuse", diffuseColor)
+		lightingShader.setVec3("light.specular", mgl32.Vec3{1.0, 1.0, 1.0})
+
+		lightingShader.setVec3("material.ambient", mgl32.Vec3{1.0, 0.5, 0.31})
+		lightingShader.setVec3("material.diffuse", mgl32.Vec3{1.0, 0.5, 0.31})
+		lightingShader.setVec3("material.specular", mgl32.Vec3{0.5, 0.5, 0.5})
+		lightingShader.setFloat("material.shininess", 32.0)
 
 		projection = mgl32.Perspective(mgl32.DegToRad(camera.Zoom), float32(800)/float32(600), 1.0, 100.0)
 		view = camera.GetViewMatrix()
-
 		lightingShader.setMat4("projection", projection)
 		lightingShader.setMat4("view", view)
-
-		model = mgl32.HomogRotate3DZ(mgl32.DegToRad(deltaTime))
 		lightingShader.setMat4("model", model)
 
 		gl.BindVertexArray(VAO)
