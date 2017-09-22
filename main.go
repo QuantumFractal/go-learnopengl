@@ -131,7 +131,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	window.SetPos(1980, 60)
+	//window.SetPos(1980, 60)
 	window.MakeContextCurrent()
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	window.SetCursorPosCallback(mouseCallback)
@@ -145,47 +145,47 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	vertices := []float32{
-		-0.5, -0.5, -0.5,
-		0.5, -0.5, -0.5,
-		0.5, 0.5, -0.5,
-		0.5, 0.5, -0.5,
-		-0.5, 0.5, -0.5,
-		-0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+		0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
+		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+		0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+		-0.5, 0.5, -0.5, 0.0, 0.0, -1.0,
+		-0.5, -0.5, -0.5, 0.0, 0.0, -1.0,
 
-		-0.5, -0.5, 0.5,
-		0.5, -0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		-0.5, 0.5, 0.5,
-		-0.5, -0.5, 0.5,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+		0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
+		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+		0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+		-0.5, 0.5, 0.5, 0.0, 0.0, 1.0,
+		-0.5, -0.5, 0.5, 0.0, 0.0, 1.0,
 
-		-0.5, 0.5, 0.5,
-		-0.5, 0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		-0.5, -0.5, 0.5,
-		-0.5, 0.5, 0.5,
+		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
+		-0.5, 0.5, -0.5, -1.0, 0.0, 0.0,
+		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
+		-0.5, -0.5, -0.5, -1.0, 0.0, 0.0,
+		-0.5, -0.5, 0.5, -1.0, 0.0, 0.0,
+		-0.5, 0.5, 0.5, -1.0, 0.0, 0.0,
 
-		0.5, 0.5, 0.5,
-		0.5, 0.5, -0.5,
-		0.5, -0.5, -0.5,
-		0.5, -0.5, -0.5,
-		0.5, -0.5, 0.5,
-		0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, -0.5, 1.0, 0.0, 0.0,
+		0.5, -0.5, 0.5, 1.0, 0.0, 0.0,
+		0.5, 0.5, 0.5, 1.0, 0.0, 0.0,
 
-		-0.5, -0.5, -0.5,
-		0.5, -0.5, -0.5,
-		0.5, -0.5, 0.5,
-		0.5, -0.5, 0.5,
-		-0.5, -0.5, 0.5,
-		-0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+		0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+		0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+		-0.5, -0.5, 0.5, 0.0, -1.0, 0.0,
+		-0.5, -0.5, -0.5, 0.0, -1.0, 0.0,
 
-		-0.5, 0.5, -0.5,
-		0.5, 0.5, -0.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		-0.5, 0.5, 0.5,
-		-0.5, 0.5, -0.5,
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+		0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, 0.5, 0.0, 1.0, 0.0,
+		-0.5, 0.5, -0.5, 0.0, 1.0, 0.0,
 	}
 
 	// VBO, EBO, VAO creation
@@ -207,8 +207,12 @@ func main() {
 	gl.BindVertexArray(VAO)
 
 	// position attribute
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(0))
 	gl.EnableVertexAttribArray(0)
+
+	// normal attribute
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(3*4))
+	gl.EnableVertexAttribArray(1)
 
 	defer gl.DeleteVertexArrays(1, &VAO)
 	defer gl.DeleteBuffers(1, &VBO)
@@ -218,7 +222,7 @@ func main() {
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*4, gl.PtrOffset(0))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(0))
 	gl.EnableVertexAttribArray(0)
 
 	lightingShader, err := CreateShader("vertex.glsl", "fragment.glsl")
@@ -259,12 +263,16 @@ func main() {
 		lightingShader.Use()
 		lightingShader.setVec3("objectColor", mgl32.Vec3{1.0, 0.5, 0.31})
 		lightingShader.setVec3("lightColor", mgl32.Vec3{1.0, 1.0, 1.0})
+		lightingShader.setVec3("lightPos", lightPos)
+		lightingShader.setVec3("viewPos", camera.Position)
 
 		projection = mgl32.Perspective(mgl32.DegToRad(camera.Zoom), float32(800)/float32(600), 1.0, 100.0)
 		view = camera.GetViewMatrix()
 
 		lightingShader.setMat4("projection", projection)
 		lightingShader.setMat4("view", view)
+
+		model = mgl32.HomogRotate3DZ(mgl32.DegToRad(deltaTime))
 		lightingShader.setMat4("model", model)
 
 		gl.BindVertexArray(VAO)
